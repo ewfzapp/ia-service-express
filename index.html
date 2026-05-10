@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IA Gratuite – Service Express</title>
+  <meta name="description" content="Posez vos questions à une intelligence artificielle gratuitement, sans inscription. Propulsé par Llama 3.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060810;
+      --surface:  rgba(255,255,255,0.04);
+      --border:   rgba(255,255,255,0.09);
+      --accent:   #7DF9C2;
+      --accent2:  #4FC3F7;
+      --text:     #E8EDF5;
+      --muted:    #6B7A99;
+      --danger:   #FF6B6B;
+      --radius:   18px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Fond étoilé */
+    #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      opacity: var(--op);
+      animation: twinkle var(--dur) var(--delay) infinite ease-in-out alternate;
+    }
+    @keyframes twinkle {
+      from { opacity: calc(var(--op) * 0.3); transform: scale(0.8); }
+      to   { opacity: var(--op); transform: scale(1.2); }
+    }
+
+    /* Nébulosité */
+    .nebula {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 30%, rgba(125,249,194,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 80% 70%, rgba(79,195,247,0.05) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 50% 10%, rgba(160,130,255,0.04) 0%, transparent 70%);
+    }
+
+    /* Layout */
+    .shell {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    header {
+      padding: 28px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .quota-badge {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+    .quota-badge span { color: var(--accent); font-weight: 600; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 44px 0 36px;
+    }
+    .hero-icon {
+      width: 60px; height: 60px;
+      margin: 0 auto 18px;
+      background: linear-gradient(135deg, rgba(125,249,194,0.15), rgba(79,195,247,0.15));
+      border: 1px solid rgba(125,249,194,0.3);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .model-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+    .model-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Zone de chat */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 24px;
+      min-height: 200px;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px 0;
+      color: var(--muted);
+    }
+    .empty-state-icon { font-size: 32px; opacity: 0.5; }
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .suggestion {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .suggestion:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Messages */
+    .msg {
+      display: flex;
+      gap: 12px;
+      animation: fadeUp 0.3s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .msg.user .msg-avatar {
+      background: rgba(125,249,194,0.12);
+      border: 1px solid rgba(125,249,194,0.2);
+    }
+    .msg.ai .msg-avatar {
+      background: rgba(79,195,247,0.12);
+      border: 1px solid rgba(79,195,247,0.2);
+    }
+    .msg-bubble {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 14.5px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .msg-bubble {
+      border-color: rgba(125,249,194,0.15);
+      background: rgba(125,249,194,0.05);
+    }
+    .msg.ai .msg-bubble { }
+
+    /* Typing indicator */
+    .typing .msg-bubble {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 14px 18px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Erreur */
+    .error-msg {
+      background: rgba(255,107,107,0.07);
+      border: 1px solid rgba(255,107,107,0.2);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      color: var(--danger);
+      font-size: 13.5px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    /* Barre de saisie */
+    .input-bar {
+      position: sticky;
+      bottom: 0;
+      padding: 16px 0 24px;
+      background: linear-gradient(to top, var(--bg) 60%, transparent);
+    }
+    .input-wrap {
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 10px 10px 18px;
+      transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: rgba(125,249,194,0.35);
+      box-shadow: 0 0 0 3px rgba(125,249,194,0.06);
+    }
+    textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      line-height: 1.5;
+      resize: none;
+      min-height: 24px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+    textarea::placeholder { color: var(--muted); }
+
+    .send-btn {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #060810;
+      font-size: 17px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.15s;
+      align-self: flex-end;
+    }
+    .send-btn:hover:not(:disabled) { opacity: 0.85; transform: scale(1.05); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .input-hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    /* Quota épuisé */
+    .quota-over {
+      text-align: center;
+      padding: 16px;
+      background: rgba(255,107,107,0.05);
+      border: 1px solid rgba(255,107,107,0.15);
+      border-radius: var(--radius);
+      color: var(--danger);
+      font-size: 13.5px;
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 16px 0 24px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.7rem; }
+      .hero { padding: 28px 0 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="stars"></div>
+<div class="nebula"></div>
+
+<div class="shell">
+
+  <header>
+    <a href="https://service-express.org" class="back-link">← Service Express</a>
+    <div class="quota-badge">Quota : <span id="quota-display">20</span>/20</div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-icon">🤖</div>
+    <h1>IA Gratuite</h1>
+    <p class="hero-sub">Posez vos questions, obtenez des réponses claires. Sans inscription, sans limite d'abonnement.</p>
+    <div class="model-tag">
+      <div class="model-dot"></div>
+      Llama 3 · 70B · Groq
+    </div>
+  </div>
+
+  <div class="chat-area" id="chat">
+    <div class="empty-state" id="empty">
+      <div class="empty-state-icon">💬</div>
+      <div style="font-size:14px">Commencez par poser une question</div>
+      <div class="suggestions">
+        <div class="suggestion" onclick="fillPrompt(this)">Explique-moi comment fonctionne l'IA</div>
+        <div class="suggestion" onclick="fillPrompt(this)">Aide-moi à rédiger un email professionnel</div>
+        <div class="suggestion" onclick="fillPrompt(this)">Donne-moi une recette rapide pour ce soir</div>
+        <div class="suggestion" onclick="fillPrompt(this)">Résume ce qu'est le RGPD en 5 points</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <div id="quota-over" class="quota-over" style="display:none">
+      Quota de 20 questions atteint pour cette session. Revenez demain !
+    </div>
+    <div class="input-wrap" id="input-wrap">
+      <textarea
+        id="prompt"
+        rows="1"
+        placeholder="Posez votre question…"
+        maxlength="2000"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="send-btn" onclick="send()" title="Envoyer">➤</button>
+    </div>
+    <div class="input-hint">Entrée pour envoyer · Maj+Entrée pour aller à la ligne</div>
+  </div>
+
+  <footer>
+    <a href="https://service-express.org/privacy.html">Confidentialité</a>
+    &nbsp;·&nbsp;
+    © 2026 Service Express
+  </footer>
+
+</div>
+
+<script>
+  const PROXY_URL = 'https://api-ia.service-express.org/chat';
+  const SESSION_KEY = 'ia_quota';
+  const MAX_QUOTA = 20;
+
+  // --- Quota (localStorage) ---
+  function getQuota() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return MAX_QUOTA;
+      const data = JSON.parse(raw);
+      // Reset si plus de 24h
+      if (Date.now() > data.resetAt) {
+        localStorage.removeItem(SESSION_KEY);
+        return MAX_QUOTA;
+      }
+      return Math.max(0, data.remaining);
+    } catch { return MAX_QUOTA; }
+  }
+
+  function consumeQuota() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      let data = raw ? JSON.parse(raw) : { remaining: MAX_QUOTA, resetAt: Date.now() + 86400000 };
+      if (Date.now() > data.resetAt) {
+        data = { remaining: MAX_QUOTA, resetAt: Date.now() + 86400000 };
+      }
+      data.remaining = Math.max(0, data.remaining - 1);
+      localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+      return data.remaining;
+    } catch { return 0; }
+  }
+
+  function updateQuotaDisplay(n) {
+    document.getElementById('quota-display').textContent = n;
+    if (n <= 0) {
+      document.getElementById('quota-over').style.display = 'block';
+      document.getElementById('input-wrap').style.opacity = '0.4';
+      document.getElementById('prompt').disabled = true;
+      document.getElementById('send-btn').disabled = true;
+    }
+  }
+
+  // --- UI helpers ---
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  }
+
+  function fillPrompt(el) {
+    const ta = document.getElementById('prompt');
+    ta.value = el.textContent;
+    ta.focus();
+    autoResize(ta);
+  }
+
+  function hideEmpty() {
+    const el = document.getElementById('empty');
+    if (el) el.remove();
+  }
+
+  function addMessage(role, text) {
+    hideEmpty();
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+      <div class="msg-bubble">${escHtml(text)}</div>
+    `;
+    chat.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    return div;
+  }
+
+  function showTyping() {
+    hideEmpty();
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = 'msg ai typing';
+    div.id = 'typing';
+    div.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div class="msg-bubble">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    `;
+    chat.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function removeTyping() {
+    document.getElementById('typing')?.remove();
+  }
+
+  function showError(msg) {
+    const chat = document.getElementById('chat');
+    const div = document.createElement('div');
+    div.className = 'error-msg';
+    div.textContent = '⚠️ ' + msg;
+    chat.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // --- Envoi ---
+  let busy = false;
+
+  async function send() {
+    if (busy) return;
+    const ta = document.getElementById('prompt');
+    const message = ta.value.trim();
+    if (!message) return;
+
+    const quota = getQuota();
+    if (quota <= 0) {
+      updateQuotaDisplay(0);
+      return;
+    }
+
+    busy = true;
+    document.getElementById('send-btn').disabled = true;
+
+    addMessage('user', message);
+    ta.value = '';
+    ta.style.height = 'auto';
+
+    const remaining = consumeQuota();
+    updateQuotaDisplay(remaining);
+
+    showTyping();
+
+    try {
+      const res = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+
+      removeTyping();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error || 'Erreur du serveur. Réessayez dans quelques instants.');
+      } else {
+        const data = await res.json();
+        addMessage('ai', data.reply || '(réponse vide)');
+      }
+    } catch (e) {
+      removeTyping();
+      showError('Impossible de contacter le serveur. Vérifiez votre connexion.');
+    }
+
+    busy = false;
+    document.getElementById('send-btn').disabled = (remaining <= 0);
+    if (remaining > 0) document.getElementById('prompt').focus();
+  }
+
+  // --- Init ---
+  updateQuotaDisplay(getQuota());
+
+  // Étoiles
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      top:${Math.random()*100}%;
+      left:${Math.random()*100}%;
+      --dur:${(Math.random()*5+3).toFixed(1)}s;
+      --delay:${(Math.random()*6).toFixed(1)}s;
+      --op:${(Math.random()*.5+.1).toFixed(2)};
+    `;
+    container.appendChild(s);
+  }
+</script>
+
+</body>
+</html>
